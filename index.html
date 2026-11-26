@@ -1,0 +1,77 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Calm Focus">
+<title>Calm Focus</title>
+<style>
+ body{margin:0;font-family:-apple-system,sans-serif;background:#0f1a24;color:#e8f0f2;padding:20px 16px 60px}
+ h1{font-size:26px;margin:10px 0 20px}
+ .card{background:#1a2a36;border-radius:18px;padding:18px;margin-bottom:16px}
+ h2{font-size:18px;margin:0 0 12px;color:#9fd8cb}
+ input,textarea{width:100%;box-sizing:border-box;border:none;border-radius:10px;padding:12px;font-size:16px;background:#0f1a24;color:#e8f0f2}
+ textarea{height:90px}
+ button{background:#4fb3a0;color:#0f1a24;border:none;border-radius:12px;padding:12px 18px;font-size:16px;font-weight:600;margin:8px 6px 0 0}
+ .big{font-size:48px;text-align:center;margin:10px 0}
+ #circle{width:120px;height:120px;border-radius:50%;background:#4fb3a0;margin:20px auto;transition:transform 4s ease-in-out;opacity:.8}
+ #breathText{text-align:center;font-size:18px}
+ .moods button{font-size:26px;background:#0f1a24;padding:8px 12px}
+ .moods button.on{background:#4fb3a0}
+ .log{font-size:14px;opacity:.8;margin-top:8px}
+</style>
+</head>
+<body>
+<h1>Calm Focus 🌿</h1>
+
+<div class="card"><h2>Today's goal</h2>
+<input id="goal" placeholder="One thing I'll do today..."></div>
+
+<div class="card"><h2>Breathe</h2>
+<div id="circle"></div><div id="breathText">Tap start when ready</div>
+<button onclick="startBreath()">Start</button><button onclick="stopBreath()">Stop</button></div>
+
+<div class="card"><h2>Focus timer</h2>
+<div class="big" id="time">25:00</div>
+<button onclick="startTimer(25)">Focus 25</button><button onclick="startTimer(5)">Break 5</button><button onclick="stopTimer()">Stop</button></div>
+
+<div class="card"><h2>How are you feeling?</h2>
+<div class="moods" id="moods"></div></div>
+
+<div class="card"><h2>Gratitude / journal</h2>
+<textarea id="journal" placeholder="Something I'm thankful for..."></textarea></div>
+
+<div class="card"><h2>Screen time today</h2>
+<input id="screen" placeholder="e.g. 4h 20m">
+<button onclick="saveDay()">Save today</button>
+<div class="log" id="log"></div></div>
+
+<script>
+const today=new Date().toDateString();
+const data=JSON.parse(localStorage.getItem('calm')||'{}');
+const day=data[today]||{};
+['goal','journal','screen'].forEach(id=>{const el=document.getElementById(id);el.value=day[id]||'';el.oninput=()=>{day[id]=el.value;save()}});
+function save(){data[today]=day;localStorage.setItem('calm',JSON.stringify(data))}
+
+const moods=['😞','😕','😐','🙂','😄'];
+const mb=document.getElementById('moods');
+moods.forEach(m=>{const b=document.createElement('button');b.textContent=m;if(day.mood===m)b.className='on';b.onclick=()=>{day.mood=m;save();[...mb.children].forEach(x=>x.className='');b.className='on'};mb.appendChild(b)});
+
+let bt,step=0;const circle=document.getElementById('circle'),bText=document.getElementById('breathText');
+const steps=[['Breathe in...',1.6],['Hold...',1.6],['Breathe out...',1],['Hold...',1]];
+function breath(){const s=steps[step%4];bText.textContent=s[0];circle.style.transform='scale('+s[1]+')';step++}
+function startBreath(){stopBreath();step=0;breath();bt=setInterval(breath,4000)}
+function stopBreath(){clearInterval(bt);circle.style.transform='scale(1)';bText.textContent='Tap start when ready'}
+
+let tt,left;const tEl=document.getElementById('time');
+function show(){tEl.textContent=String(Math.floor(left/60)).padStart(2,'0')+':'+String(left%60).padStart(2,'0')}
+function startTimer(min){stopTimer();left=min*60;show();tt=setInterval(()=>{left--;show();if(left<=0){stopTimer();alert('Time is up! Well done.')}},1000)}
+function stopTimer(){clearInterval(tt)}
+
+function saveDay(){save();showLog()}
+function showLog(){const days=Object.keys(data).slice(-7).reverse();document.getElementById('log').innerHTML=days.map(d=>d+': '+(data[d].mood||'')+' '+(data[d].screen||'-')).join('<br>')}
+showLog();
+</script>
+</body>
+</html>
